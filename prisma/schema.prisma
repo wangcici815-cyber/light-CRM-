@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ──── 用户 ────
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(MEMBER)
+  avatar    String?
+  phone     String?
+  active    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedCustomers Customer[] @relation("Owner")
+  createdDeals      Deal[]     @relation("DealOwner")
+  activities        Activity[]
+  stageLogs         DealStageLog[]
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+// ──── 客户 ────
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  industry  String?
+  source    String?
+  phone     String?
+  email     String?
+  address   String?
+  remark    String?
+  ownerId   String?
+  owner     User?     @relation("Owner", fields: [ownerId], references: [id])
+  tags      CustomerTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  contacts  Contact[]
+  deals     Deal[]
+  activities Activity[]
+}
+
+// ──── 联系人 ────
+model Contact {
+  id         String   @id @default(cuid())
+  name       String
+  position   String?
+  phone      String?
+  email      String?
+  wechat     String?
+  isPrimary  Boolean  @default(false)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ──── 标签 ────
+model Tag {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  color     String        @default("#6366f1")
+
+  customers CustomerTag[]
+}
+
+model CustomerTag {
+  customerId String
+  tagId      String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, tagId])
+}
+
+// ──── 销售阶段 ────
+model DealStage {
+  id          String  @id @default(cuid())
+  name        String
+  order       Int
+  color       String  @default("#6366f1")
+  probability Int     @default(0)
+
+  deals Deal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ──── 商机 ────
+model Deal {
+  id        String      @id @default(cuid())
+  title     String
+  amount    Float?
+  expectedCloseDate DateTime?
+  remark    String?
+
+  stageId   String
+  stage     DealStage   @relation(fields: [stageId], references: [id])
+
+  customerId String
+  customer   Customer   @relation(fields: [customerId], references: [id])
+
+  ownerId   String
+  owner     User        @relation("DealOwner", fields: [ownerId], references: [id])
+
+  status    DealStatus  @default(OPEN)
+  lostReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activities Activity[]
+  stageLogs  DealStageLog[]
+  quotations  Quotation[]
+  contracts   Contract[]
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+// ──── 阶段变更日志 ────
+model DealStageLog {
+  id          String   @id @default(cuid())
+  dealId      String
+  deal        Deal     @relation(fields: [dealId], references: [id])
+  fromStageId String?
+  toStageId   String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// ──── 跟进记录 ────
+model Activity {
+  id         String       @id @default(cuid())
+  type       ActivityType
+  content    String
+  nextStep   String?
+  nextDate   DateTime?
+
+  customerId String
+  customer   Customer     @relation(fields: [customerId], references: [id])
+  dealId     String?
+  deal       Deal?        @relation(fields: [dealId], references: [id])
+  ownerId    String
+  owner      User         @relation(fields: [ownerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ActivityType {
+  CALL
+  MEETING
+  EMAIL
+  WECHAT
+  OTHER
+}
+
+// ──── 报价单状态 ────
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+// ──── 合同状态 ────
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  TERMINATED
+}
+
+// ──── 报价单 ────
+model Quotation {
+  id          String          @id @default(cuid())
+  quoteNumber String          @unique
+  dealId      String
+  deal        Deal            @relation(fields: [dealId], references: [id])
+  status      QuotationStatus @default(DRAFT)
+  totalAmount Float           @default(0)
+  validUntil  DateTime?
+  remark      String?
+
+  items QuotationItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ──── 报价单项 ────
+model QuotationItem {
+  id          String    @id @default(cuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  itemName    String
+  description String?
+  quantity    Float     @default(1)
+  unitPrice   Float     @default(0)
+  amount      Float     @default(0)
+  image       String?
+  sortOrder   Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ──── 合同 ────
+model Contract {
+  id             String         @id @default(cuid())
+  contractNumber String         @unique
+  dealId         String
+  deal           Deal           @relation(fields: [dealId], references: [id])
+  title          String
+  totalAmount    Float          @default(0)
+  status         ContractStatus @default(DRAFT)
+  startDate      DateTime?
+  endDate        DateTime?
+  content        String?
+  signedDate     DateTime?
+  remark         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
