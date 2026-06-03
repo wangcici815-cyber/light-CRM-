@@ -1,10 +1,10 @@
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import { Pool } from "@neondatabase/serverless";
 
-const databaseUrl = process.env.DATABASE_URL || "file:./dev.db";
-const dbPath = databaseUrl.replace("file:", "");
-const adapter = new PrismaBetterSqlite3({ url: dbPath });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaNeon(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
@@ -107,7 +107,7 @@ async function main() {
         });
 
         // 报价单
-        const q1 = await prisma.quotation.create({
+        await prisma.quotation.create({
           data: {
             quoteNumber: "Q-2026-0001",
             dealId: deal1.id,
