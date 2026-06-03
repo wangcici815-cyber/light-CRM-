@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Fragment } from "react";
 import { useFetch } from "@/lib/use-fetch";
 import { Button, Card, Badge, Modal, Input, Loading } from "@/components/ui";
 import { Plus, FileText, FileSignature, ChevronRight, ChevronDown } from "lucide-react";
+import { quotationStatusColors, quotationStatusLabels, contractStatusColors, contractStatusLabels } from "@/lib/constants";
 import { useSession } from "next-auth/react";
 
 export default function DealsPage() {
@@ -164,13 +165,8 @@ function DealDetailModal({ deal, onClose, onUpdate }: { deal: any; onClose: () =
                 <div key={q.id} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
                   <span className="font-medium text-indigo-600">{q.quoteNumber}</span>
                   <span>¥{q.totalAmount.toLocaleString()}</span>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    q.status === "DRAFT" ? "bg-gray-100 text-gray-700" :
-                    q.status === "SENT" ? "bg-blue-100 text-blue-700" :
-                    q.status === "ACCEPTED" ? "bg-green-100 text-green-700" :
-                    "bg-red-100 text-red-700"
-                  }`}>
-                    {q.status === "DRAFT" ? "草稿" : q.status === "SENT" ? "已发送" : q.status === "ACCEPTED" ? "已接受" : "已拒绝"}
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${quotationStatusColors[q.status]}`}>
+                    {quotationStatusLabels[q.status]}
                   </span>
                 </div>
               ))}
@@ -187,13 +183,8 @@ function DealDetailModal({ deal, onClose, onUpdate }: { deal: any; onClose: () =
                 <div key={c.id} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
                   <span className="font-medium text-indigo-600">{c.contractNumber}</span>
                   <span className="text-gray-700">{c.title}</span>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    c.status === "DRAFT" ? "bg-gray-100 text-gray-700" :
-                    c.status === "ACTIVE" ? "bg-green-100 text-green-700" :
-                    c.status === "COMPLETED" ? "bg-blue-100 text-blue-700" :
-                    "bg-red-100 text-red-700"
-                  }`}>
-                    {c.status === "DRAFT" ? "草稿" : c.status === "ACTIVE" ? "进行中" : c.status === "COMPLETED" ? "已完成" : "已终止"}
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${contractStatusColors[c.status]}`}>
+                    {contractStatusLabels[c.status]}
                   </span>
                 </div>
               ))}

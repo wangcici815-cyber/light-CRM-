@@ -11,7 +11,7 @@ export async function GET(req: NextRequest, { params }: any) {
     where: { id },
     include: {
       deal: {
-        select: { id: true, title: true, customer: { select: { id: true, name: true } } },
+        select: { id: true, title: true, ownerId: true, customer: { select: { id: true, name: true } } },
       },
     },
   });
@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest, { params }: any) {
     },
     include: {
       deal: {
-        select: { id: true, title: true, customer: { select: { id: true, name: true } } },
+        select: { id: true, title: true, ownerId: true, customer: { select: { id: true, name: true } } },
       },
     },
   });

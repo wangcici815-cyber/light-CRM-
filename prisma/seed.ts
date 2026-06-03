@@ -1,10 +1,10 @@
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { Pool } from "@neondatabase/serverless";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaNeon(pool);
+const databaseUrl = process.env.DATABASE_URL || "file:./dev.db";
+const dbPath = databaseUrl.replace("file:", "");
+const adapter = new PrismaBetterSqlite3({ url: dbPath });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {

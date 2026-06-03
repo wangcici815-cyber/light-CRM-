@@ -2,16 +2,9 @@
 
 import { useState } from "react";
 import { useFetch } from "@/lib/use-fetch";
-import { Card, Badge, Button, Loading } from "@/components/ui";
+import { Card, Badge, Button, Loading, Pagination, FileRenderer } from "@/components/ui";
+import { activityTypeLabels, activityTypeColors } from "@/lib/constants";
 import { Plus, Filter } from "lucide-react";
-
-const typeLabels: Record<string, string> = {
-  CALL: "电话", MEETING: "拜访", EMAIL: "邮件", WECHAT: "微信", OTHER: "其他",
-};
-const typeColors: Record<string, string> = {
-  CALL: "bg-blue-100 text-blue-700", MEETING: "bg-green-100 text-green-700",
-  EMAIL: "bg-amber-100 text-amber-700", WECHAT: "bg-purple-100 text-purple-700", OTHER: "bg-gray-100 text-gray-700",
-};
 
 export default function ActivitiesPage() {
   const [page, setPage] = useState(1);
@@ -37,12 +30,13 @@ export default function ActivitiesPage() {
           {activities.map((a: any) => (
             <Card key={a.id} className="p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Badge className={typeColors[a.type]}>{typeLabels[a.type]}</Badge>
+                <Badge className={activityTypeColors[a.type]}>{activityTypeLabels[a.type]}</Badge>
                 <span className="text-sm font-medium">{a.customer?.name}</span>
                 {a.deal && <span className="text-xs text-[#6b7280]">· {a.deal.title}</span>}
                 <span className="text-xs text-[#6b7280] ml-auto">{new Date(a.createdAt).toLocaleString()}</span>
               </div>
               <p className="text-sm whitespace-pre-wrap">{a.content}</p>
+              <FileRenderer filesStr={a.files} />
               {a.nextStep && (
                 <p className="text-xs text-amber-600 mt-2">📌 下一步：{a.nextStep} {a.nextDate ? `(${new Date(a.nextDate).toLocaleDateString()})` : ""}</p>
               )}
@@ -52,13 +46,7 @@ export default function ActivitiesPage() {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>上一页</Button>
-          <span className="text-sm text-[#6b7280]">{page} / {totalPages}</span>
-          <Button variant="secondary" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>下一页</Button>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

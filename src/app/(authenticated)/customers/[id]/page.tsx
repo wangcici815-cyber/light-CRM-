@@ -2,17 +2,10 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Badge, Card, Loading, Input } from "@/components/ui";
+import { Button, Badge, Card, Loading, Input, FileRenderer } from "@/components/ui";
 import { ArrowLeft, Phone, Mail, MapPin, Building2, Plus, Trash2 } from "lucide-react";
 import { useFetch } from "@/lib/use-fetch";
-
-const typeColors: Record<string, string> = {
-  "高意向": "bg-green-100 text-green-700",
-  "意向一般": "bg-amber-100 text-amber-700",
-  "已流失": "bg-red-100 text-red-700",
-  "VIP客户": "bg-purple-100 text-purple-700",
-  "新客户": "bg-blue-100 text-blue-700",
-};
+import { tagColors, activityTypeLabels, activityTypeColors } from "@/lib/constants";
 
 export default function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -58,7 +51,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
         {customer.tags?.length > 0 && (
           <div className="flex gap-1 mt-3">
             {customer.tags.map((t: any) => (
-              <Badge key={t.tag.id} className={typeColors[t.tag.name] || "bg-gray-100"}>{t.tag.name}</Badge>
+              <Badge key={t.tag.id} className={tagColors[t.tag.name] || "bg-gray-100"}>{t.tag.name}</Badge>
             ))}
           </div>
         )}
@@ -224,8 +217,15 @@ function CreateDealModal({ customerId, onClose, onCreated }: { customerId: strin
 }
 
 function ActivitiesTab({ customerId }: { customerId: string }) {
-  const { data: activities, loading, refresh } = useFetch<any[]>(`/api/activities?customerId=${customerId}`);
+  const { data: res, loading, refresh } = useFetch<any>(`/api/activities?customerId=${customerId}`);
+  const activities = res?.data || [];
   const [showForm, setShowForm] = useState(false);
+
+  const typeBadgeClass: Record<string, string> = {
+    CALL: "bg-blue-100 text-blue-700", MEETING: "bg-green-100 text-green-700",
+    EMAIL: "bg-amber-100 text-amber-700", WECHAT: "bg-purple-100 text-purple-700",
+    OTHER: "bg-gray-100 text-gray-700",
+  };
 
   return (
     <div className="space-y-3">
@@ -239,17 +239,13 @@ function ActivitiesTab({ customerId }: { customerId: string }) {
           {activities?.map((a: any) => (
             <Card key={a.id} className="p-4">
               <div className="flex items-center justify-between mb-1">
-                <Badge className={
-                  a.type === "CALL" ? "bg-blue-100 text-blue-700" :
-                  a.type === "MEETING" ? "bg-green-100 text-green-700" :
-                  a.type === "EMAIL" ? "bg-amber-100 text-amber-700" :
-                  "bg-gray-100 text-gray-700"
-                }>
-                  {a.type === "CALL" ? "电话" : a.type === "MEETING" ? "拜访" : a.type === "EMAIL" ? "邮件" : a.type === "WECHAT" ? "微信" : "其他"}
+                <Badge className={activityTypeColors[a.type] || typeBadgeClass[a.type]}>
+                  {activityTypeLabels[a.type] || a.type}
                 </Badge>
                 <span className="text-xs text-[#6b7280]">{new Date(a.createdAt).toLocaleString()}</span>
               </div>
               <p className="text-sm mt-2 whitespace-pre-wrap">{a.content}</p>
+              <FileRenderer filesStr={a.files} />
               {a.nextStep && <p className="text-xs text-[#f59e0b] mt-1">下一步：{a.nextStep}</p>}
               <p className="text-xs text-[#6b7280] mt-1">记录人：{a.owner?.name}</p>
             </Card>
@@ -265,16 +261,43 @@ function ActivitiesTab({ customerId }: { customerId: string }) {
 
 function ActivityForm({ customerId, dealId, onClose, onCreated }: { customerId: string; dealId?: string; onClose: () => void; onCreated: () => void }) {
   const [form, setForm] = useState({ type: "OTHER", content: "", nextStep: "", nextDate: "" });
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.content) return;
-    await fetch("/api/activities", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, customerId, dealId }) });
+    setUploading(true);
+
+    // Upload files first
+    const uploaded: { url: string; name: string; type: string }[] = [];
+    for (const file of files) {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (res.ok) {
+        uploaded.push(await res.json());
+      }
+    }
+
+    await fetch("/api/activities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...form,
+        customerId,
+        dealId,
+        files: JSON.stringify(uploaded),
+      }),
+    });
+    setUploading(false);
     onCreated();
   }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-lg w-full max-w-md mx-4 p-5">
+      <div className="relative bg-white rounded-xl shadow-lg w-full max-w-lg mx-4 p-5">
         <h3 className="text-sm font-semibold mb-4">记录跟进</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
@@ -292,11 +315,26 @@ function ActivityForm({ customerId, dealId, onClose, onCreated }: { customerId: 
             <textarea className="w-full px-3 py-2 rounded-lg border border-[#e5e7eb] text-sm focus:outline-none focus:ring-2 focus:ring-[#4f46e5]" rows={4} required
               value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} />
           </div>
-          <Input label="下一步计划" value={form.nextStep} onChange={e => setForm(f => ({ ...f, nextStep: e.target.value }))} />
-          <Input label="下次跟进日期" type="date" value={form.nextDate} onChange={e => setForm(f => ({ ...f, nextDate: e.target.value }))} />
+          <div className="space-y-1">
+            <label className="block text-sm font-medium">附件</label>
+            <input type="file" multiple accept="image/*,.doc,.docx,.xls,.xlsx,.pdf" className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
+              onChange={e => setFiles(Array.from(e.target.files || []))} />
+            {files.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-1">
+                {Array.from(files).map((f, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700">
+                    {f.name}
+                    <button type="button" className="text-gray-400 hover:text-red-500" onClick={() => setFiles(fs => fs.filter((_, j) => j !== i))}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <input type="text" placeholder="下一步计划" className="w-full h-9 px-3 rounded-lg border border-[#e5e7eb] text-sm" value={form.nextStep} onChange={e => setForm(f => ({ ...f, nextStep: e.target.value }))} />
+          <input type="date" className="w-full h-9 px-3 rounded-lg border border-[#e5e7eb] text-sm" value={form.nextDate} onChange={e => setForm(f => ({ ...f, nextDate: e.target.value }))} />
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="secondary" type="button" onClick={onClose}>取消</Button>
-            <Button type="submit">保存</Button>
+            <button type="button" onClick={onClose} className="inline-flex items-center h-9 px-4 rounded-lg text-sm font-medium bg-white text-gray-900 border border-[#e5e7eb] hover:bg-gray-50">取消</button>
+            <button type="submit" disabled={uploading} className="inline-flex items-center h-9 px-4 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">{uploading ? "上传中..." : "保存"}</button>
           </div>
         </form>
       </div>

@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { type, content, nextStep, nextDate, customerId, dealId } = body;
+  const { type, content, nextStep, nextDate, customerId, dealId, files } = body;
 
   if (!content || !customerId) {
     return NextResponse.json({ error: "跟进内容和客户为必填" }, { status: 400 });
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
       content,
       nextStep,
       nextDate: nextDate ? new Date(nextDate) : undefined,
+      files: files || "[]",
       customerId,
       dealId: dealId || undefined,
       ownerId: user.id,

@@ -2,20 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback, Fragment } from "react";
 import { Plus, Trash2, ChevronRight, ChevronDown } from "lucide-react";
-
-const statusColors: Record<string, string> = {
-  DRAFT: "bg-gray-100 text-gray-700",
-  SENT: "bg-blue-100 text-blue-700",
-  ACCEPTED: "bg-green-100 text-green-700",
-  REJECTED: "bg-red-100 text-red-700",
-};
-
-const statusLabels: Record<string, string> = {
-  DRAFT: "草稿",
-  SENT: "已发送",
-  ACCEPTED: "已接受",
-  REJECTED: "已拒绝",
-};
+import { Pagination } from "@/components/ui";
+import { quotationStatusColors, quotationStatusLabels } from "@/lib/constants";
 
 export default function QuotationsPage() {
   const [quotations, setQuotations] = useState<any[]>([]);
@@ -78,7 +66,7 @@ export default function QuotationsPage() {
                     <td className="px-4 py-3 text-gray-600">{q.deal?.title || "-"}</td>
                     <td className="px-4 py-3 text-right font-medium">¥{q.totalAmount.toLocaleString()}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[q.status]}`}>{statusLabels[q.status]}</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${quotationStatusColors[q.status]}`}>{quotationStatusLabels[q.status]}</span>
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{new Date(q.createdAt).toLocaleDateString()}</td>
                   </tr>
@@ -89,13 +77,7 @@ export default function QuotationsPage() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <button className="inline-flex items-center h-8 px-3 text-xs rounded-lg bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>上一页</button>
-          <span className="text-sm text-gray-500">{page} / {totalPages}</span>
-          <button className="inline-flex items-center h-8 px-3 text-xs rounded-lg bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>下一页</button>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       {showCreate && <CreateQuotationModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load() }} />}
       {detailId && <QuotationDetailModal id={detailId} onClose={() => setDetailId(null)} onUpdated={() => { setDetailId(null); load() }} />}
@@ -503,7 +485,7 @@ function QuotationDetailModal({ id, onClose, onUpdated }: { id: string; onClose:
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <h2 className="text-base font-semibold">{quotation.quoteNumber}</h2>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[status]}`}>{statusLabels[status]}</span>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${quotationStatusColors[status]}`}>{quotationStatusLabels[status]}</span>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-900 text-lg leading-none">×</button>
         </div>

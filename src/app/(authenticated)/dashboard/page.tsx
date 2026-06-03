@@ -6,6 +6,7 @@ import { Users, Kanban, PhoneCall, DollarSign } from "lucide-react";
 async function getStats() {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const [
     todayActivities,
@@ -17,7 +18,7 @@ async function getStats() {
     myCustomers,
   ] = await Promise.all([
     prisma.activity.count({
-      where: { createdAt: { gte: new Date(now.setHours(0, 0, 0, 0)) } },
+      where: { createdAt: { gte: todayStart } },
     }),
     prisma.customer.count({
       where: { createdAt: { gte: startOfMonth } },

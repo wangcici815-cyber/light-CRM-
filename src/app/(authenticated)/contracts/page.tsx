@@ -2,20 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
-
-const statusColors: Record<string, string> = {
-  DRAFT: "bg-gray-100 text-gray-700",
-  ACTIVE: "bg-green-100 text-green-700",
-  COMPLETED: "bg-blue-100 text-blue-700",
-  TERMINATED: "bg-red-100 text-red-700",
-};
-
-const statusLabels: Record<string, string> = {
-  DRAFT: "草稿",
-  ACTIVE: "进行中",
-  COMPLETED: "已完成",
-  TERMINATED: "已终止",
-};
+import { Pagination } from "@/components/ui";
+import { contractStatusColors, contractStatusLabels } from "@/lib/constants";
 
 export default function ContractsPage() {
   const [contracts, setContracts] = useState<any[]>([]);
@@ -79,7 +67,7 @@ export default function ContractsPage() {
                     <td className="px-4 py-3">{c.deal?.customer?.name || "-"}</td>
                     <td className="px-4 py-3 text-right font-medium">¥{c.totalAmount.toLocaleString()}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[c.status]}`}>{statusLabels[c.status]}</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${contractStatusColors[c.status]}`}>{contractStatusLabels[c.status]}</span>
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{c.startDate ? new Date(c.startDate).toLocaleDateString() : "-"}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{c.endDate ? new Date(c.endDate).toLocaleDateString() : "-"}</td>
@@ -91,13 +79,7 @@ export default function ContractsPage() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <button className="inline-flex items-center h-8 px-3 text-xs rounded-lg bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>上一页</button>
-          <span className="text-sm text-gray-500">{page} / {totalPages}</span>
-          <button className="inline-flex items-center h-8 px-3 text-xs rounded-lg bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>下一页</button>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       {showCreate && <CreateContractModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load() }} />}
       {detailId && <ContractDetailModal id={detailId} onClose={() => setDetailId(null)} onUpdated={() => { setDetailId(null); load() }} />}
@@ -105,9 +87,11 @@ export default function ContractsPage() {
   );
 }
 
+type ContractForm = { dealId: string; title: string; totalAmount: string; status: string; startDate: string; endDate: string; content: string; signedDate: string; remark: string };
+
 function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [deals, setDeals] = useState<any[]>([]);
-  const [form, setForm] = useState({ dealId: "", title: "", totalAmount: "", status: "DRAFT", startDate: "", endDate: "", content: "", signedDate: "", remark: "" });
+  const [form, setForm] = useState<ContractForm>({ dealId: "", title: "", totalAmount: "", status: "DRAFT", startDate: "", endDate: "", content: "", signedDate: "", remark: "" });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -200,7 +184,7 @@ function ContractDetailModal({ id, onClose, onUpdated }: { id: string; onClose: 
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<any>({});
+  const [form, setForm] = useState<ContractForm>({ dealId: "", title: "", totalAmount: "", status: "DRAFT", startDate: "", endDate: "", content: "", signedDate: "", remark: "" });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -208,7 +192,8 @@ function ContractDetailModal({ id, onClose, onUpdated }: { id: string; onClose: 
     fetch(`/api/contracts/${id}`).then(r => r.json()).then(data => {
       setContract(data);
       setForm({
-        title: data.title,
+        dealId: "",
+        title: data.title || "",
         totalAmount: String(data.totalAmount || ""),
         status: data.status,
         startDate: data.startDate ? data.startDate.split("T")[0] : "",
@@ -268,7 +253,7 @@ function ContractDetailModal({ id, onClose, onUpdated }: { id: string; onClose: 
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <h2 className="text-base font-semibold">{contract.contractNumber}</h2>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[contract.status]}`}>{statusLabels[contract.status]}</span>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${contractStatusColors[contract.status]}`}>{contractStatusLabels[contract.status]}</span>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-900 text-lg leading-none">×</button>
         </div>

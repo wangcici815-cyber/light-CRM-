@@ -36,14 +36,49 @@ export function Modal(p: { open: boolean; onClose: () => void; title: string; ch
   );
 }
 
-export function Input(p: React.InputHTMLAttributes<HTMLInputElement> & { label?: string; error?: string }) {
+export function Input({ label, error, className, ...rest }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string; error?: string }) {
   return (
     <div className="space-y-1">
-      {p.label && <label className="block text-sm font-medium text-gray-900">{p.label}</label>}
-      <input className={`w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${p.error ? "border-red-500" : ""} ${p.className || ""}`} {...p} />
-      {p.error && <p className="text-xs text-red-500">{p.error}</p>}
+      {label && <label className="block text-sm font-medium text-gray-900">{label}</label>}
+      <input className={`w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${error ? "border-red-500" : ""} ${className || ""}`} {...rest} />
+      {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );
+}
+
+export function Pagination({ page, totalPages, onPageChange }: { page: number; totalPages: number; onPageChange: (p: number) => void }) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <button className="inline-flex items-center h-8 px-3 text-xs rounded-lg bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>上一页</button>
+      <span className="text-sm text-gray-500">{page} / {totalPages}</span>
+      <button className="inline-flex items-center h-8 px-3 text-xs rounded-lg bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>下一页</button>
+    </div>
+  );
+}
+
+export function FileRenderer({ filesStr }: { filesStr: string | null }) {
+  if (!filesStr) return null;
+  try {
+    const files = JSON.parse(filesStr);
+    if (!files.length) return null;
+    return (
+      <div className="flex flex-wrap gap-2 mt-2">
+        {files.map((f: { url: string; name: string; type: string }, i: number) => (
+          f.type === "image" ? (
+            <a key={i} href={f.url} target="_blank" rel="noopener noreferrer">
+              <img src={f.url} alt={f.name} className="w-16 h-16 object-cover rounded-lg border border-gray-200 hover:opacity-80" />
+            </a>
+          ) : (
+            <a key={i} href={f.url} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 text-xs text-gray-700 hover:bg-gray-200">
+              {f.name}
+            </a>
+          )
+        ))}
+      </div>
+    );
+  } catch { return null; }
 }
 
 export const Button = Btn;

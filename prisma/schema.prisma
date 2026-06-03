@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 // ──── 用户 ────
@@ -159,6 +159,7 @@ model Activity {
   content    String
   nextStep   String?
   nextDate   DateTime?
+  files      String?      @default("[]")
 
   customerId String
   customer   Customer     @relation(fields: [customerId], references: [id])

@@ -4,14 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Plus, Search } from "lucide-react";
-
-const typeColors: Record<string, string> = {
-  "高意向": "bg-green-100 text-green-700",
-  "意向一般": "bg-amber-100 text-amber-700",
-  "已流失": "bg-red-100 text-red-700",
-  "VIP客户": "bg-purple-100 text-purple-700",
-  "新客户": "bg-blue-100 text-blue-700",
-};
+import { Pagination } from "@/components/ui";
+import { tagColors } from "@/lib/constants";
 
 export default function CustomersPage() {
   const router = useRouter();
@@ -19,12 +13,19 @@ export default function CustomersPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   async function load() {
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), search });
+    const params = new URLSearchParams({ page: String(page), search: debouncedSearch });
     const res = await fetch(`/api/customers?${params}`);
     const json = await res.json();
     setCustomers(json.data);
@@ -32,7 +33,7 @@ export default function CustomersPage() {
     setLoading(false);
   }
 
-  useEffect(() => { load() }, [page, search]);
+  useEffect(() => { load() }, [page, debouncedSearch]);
 
   const totalPages = Math.ceil(total / 20);
 
@@ -88,7 +89,7 @@ export default function CustomersPage() {
                     <td className="px-4 py-3">
                       <div className="flex gap-1 flex-wrap">
                         {c.tags?.map((t: any) => (
-                          <span key={t.tag.id} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${typeColors[t.tag.name] || "bg-gray-100 text-gray-700"}`}>{t.tag.name}</span>
+                          <span key={t.tag.id} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${tagColors[t.tag.name] || "bg-gray-100 text-gray-700"}`}>{t.tag.name}</span>
                         ))}
                       </div>
                     </td>
@@ -103,13 +104,7 @@ export default function CustomersPage() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <button className="inline-flex items-center h-8 px-3 text-xs rounded-lg bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>上一页</button>
-          <span className="text-sm text-gray-500">{page} / {totalPages}</span>
-          <button className="inline-flex items-center h-8 px-3 text-xs rounded-lg bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>下一页</button>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       {showCreate && (
         <CreateCustomerModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load() }} />
