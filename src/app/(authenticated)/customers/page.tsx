@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { Plus, Search } from "lucide-react";
 import { Pagination } from "@/components/ui";
 import { tagColors } from "@/lib/constants";

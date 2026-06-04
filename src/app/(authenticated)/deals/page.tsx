@@ -5,10 +5,7 @@ import { useFetch } from "@/lib/use-fetch";
 import { Button, Card, Badge, Modal, Input, Loading } from "@/components/ui";
 import { Plus, FileText, FileSignature, ChevronRight, ChevronDown } from "lucide-react";
 import { quotationStatusColors, quotationStatusLabels, contractStatusColors, contractStatusLabels } from "@/lib/constants";
-import { useSession } from "next-auth/react";
-
 export default function DealsPage() {
-  const { data: session } = useSession();
   const { data: board, loading, refresh } = useFetch<any[]>("/api/deals/board");
   const [showCreate, setShowCreate] = useState(false);
   const [dragDeal, setDragDeal] = useState<any>(null);

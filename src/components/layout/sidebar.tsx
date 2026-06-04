@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useAuth } from "@/components/providers";
 import {
   LayoutDashboard,
   Users,
@@ -28,7 +28,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { user, logout } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
 
   return (
@@ -66,10 +66,10 @@ export function Sidebar() {
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-[#16213e] transition-colors"
         >
           <div className="w-7 h-7 rounded-full bg-[#4f46e5] flex items-center justify-center text-xs font-medium">
-            {session?.user?.name?.charAt(0) || "U"}
+            {user?.name?.charAt(0) || "U"}
           </div>
           <span className="flex-1 text-left truncate">
-            {session?.user?.name || "用户"}
+            {user?.name || "用户"}
           </span>
           <ChevronDown className="w-3 h-3" />
         </button>
@@ -77,16 +77,16 @@ export function Sidebar() {
         {showProfile && (
           <div className="absolute bottom-full left-3 right-3 mb-1 bg-[#16213e] rounded-lg py-1 shadow-lg">
             <div className="px-3 py-2 text-xs text-gray-400 border-b border-white/10">
-              {session?.user?.email}
+              {user?.email}
               <br />
               <span className="text-[#4f46e5]">
-                {session?.user && (session.user as any).role === "ADMIN"
+                {user?.role === "ADMIN"
                   ? "管理员"
                   : "普通成员"}
               </span>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: "/" })}
+              onClick={() => { logout(); }}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/components/providers";
 import { useFetch } from "@/lib/use-fetch";
 import { Button, Card, Input, Loading } from "@/components/ui";
 import { Users, Shield, Plus, Trash2, RotateCcw } from "lucide-react";
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
-  const isAdmin = (session?.user as any)?.role === "ADMIN";
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   return (
     <div className="p-6 space-y-6">
@@ -24,8 +24,8 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="mt-4 text-xs text-[#6b7280] space-y-1">
-            <p>姓名：{session?.user?.name}</p>
-            <p>邮箱：{session?.user?.email}</p>
+            <p>姓名：{user?.name}</p>
+            <p>邮箱：{user?.email}</p>
             <p>角色：{isAdmin ? "管理员" : "普通成员"}</p>
           </div>
         </Card>
